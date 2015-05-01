@@ -13,7 +13,7 @@ namespace tcp_chat_server
         String name;
 
         /** Clients connected to chat room*/
-        Hashtable clients;
+        List<Client> clients;
 
 
         /**
@@ -22,7 +22,7 @@ namespace tcp_chat_server
         public Room(String name)
         {
             this.name = name;
-            this.clients = new Hashtable();
+            this.clients = new List<Client>();
         }
 
 
@@ -40,7 +40,7 @@ namespace tcp_chat_server
          */ 
         public Room AddClient(Client client)
         {
-            this.clients.Add(client.GetHashCode(), client);
+            this.clients.Add(client);
 
             return this;
         }
@@ -51,20 +51,29 @@ namespace tcp_chat_server
          */ 
         public Room RemoveClient(Client client)
         {
-            this.clients.Remove(client.GetHashCode());
+            this.clients.Remove(client);
 
             return this;
         }
 
 
         /**
+         * Return all clients connected to chatroom
+         */
+        public List<Client> GetClients()
+        {
+            return this.clients;
+        }
+
+
+        /**
          * Broadcast message to users connected to chat room
          */ 
-        public void BroadcastMessage(String message, Client sender)
+        public void BroadcastMessage(Message message)
         {
-            foreach(Client client in this.clients.Values)
+            foreach(Client client in this.clients)
             {
-                Server.sendMessage(client.getSocket(), message);
+                client.SendMessage(message);
             }
         }
     }

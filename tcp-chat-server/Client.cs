@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace tcp_chat_server
-{   
+{
     class Client
     {
         /** Clients name  */
@@ -18,30 +22,48 @@ namespace tcp_chat_server
         /** Room, where the client is connected */
         private Room room;
 
+        /** Clients stream reader */
+        private StreamReader reader;
+
+        /** Clients stream writer */
+        private StreamWriter writer;
+
 
         /**
          * Constructor
-         */ 
-        public Client(String name, TcpClient socket)
+         */
+        public Client(TcpClient socket)
         {
-            this.name = name;
             this.socket = socket;
+            this.reader = new StreamReader(this.GetSocket().GetStream());
+            this.writer = new StreamWriter(this.GetSocket().GetStream());
         }
 
 
         /**
          * Get Name
-         */ 
-        public String getName()
+         */
+        public String GetName()
         {
             return this.name;
         }
 
 
         /**
+         * Set Name
+         */
+        public Client SetName(String name)
+        {
+            this.name = name;
+
+            return this;
+        }
+
+
+        /**
          * Get Socket
-         */ 
-        public TcpClient getSocket()
+         */
+        public TcpClient GetSocket()
         {
             return this.socket;
         }
@@ -49,8 +71,8 @@ namespace tcp_chat_server
 
         /**
          * Set chat room
-         */ 
-        public Client setRoom(Room room)
+         */
+        public Client SetRoom(Room room)
         {
             this.room = room;
 
@@ -60,10 +82,48 @@ namespace tcp_chat_server
 
         /**
          * Get chat room
-         */ 
-        public Room getRoom()
+         */
+        public Room GetRoom()
         {
             return this.room;
+        }
+
+
+        /**
+         * Send message to client
+         */
+        public void SendMessage(Message message)
+        {
+            Server.SendMessage(this.GetSocket(), message);
+        }
+
+
+        /**
+         * Receives and deserializes message sent from client
+         */
+        public Message ReceiveMessage()
+        {
+            NetworkStream stream = this.GetSocket().GetStream();
+
+            BinaryFormatter formatter = new BinaryFormatter();
+            formatter.Binder = new DeserializationBinder();
+
+            Message message = (Message)formatter.Deserialize(stream);
+
+            return message;
+        }
+
+        
+        /**
+         * Handles messages sent by client
+         */ 
+        public void Chat()
+        {
+            while (true)
+            {
+                Message message = ReceiveMessage();
+                this.GetRoom().BroadcastMessage(message);
+            }
         }
     }
 }
