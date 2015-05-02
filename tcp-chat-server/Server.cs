@@ -9,7 +9,6 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
-using System.Xml.Serialization;
 
 namespace tcp_chat_server
 {
@@ -36,6 +35,10 @@ namespace tcp_chat_server
             this.chatRooms = new List<Room>();
         }
 
+
+        /**
+         * Starts server
+         */ 
         public bool Start()
         {
             this.serverSocket = new TcpListener(this.ipAdress, this.port);
@@ -57,10 +60,19 @@ namespace tcp_chat_server
             return isRunning;
         }
 
+        /**
+         * Stops server
+         */ 
         public void Stop()
         {
             this.isRunning = false;
             this.serverSocket.Stop();
+
+            // Close all clients sockets to terminate their threads
+            foreach(TcpClient client in this.connectedClients.Values)
+            {
+                client.Close();
+            }
         }
 
 
@@ -74,13 +86,14 @@ namespace tcp_chat_server
                 try
                 {
                     TcpClient clientSocket = serverSocket.AcceptTcpClient();
+                    connectedClients.Add(clientSocket.GetHashCode(), clientSocket);
 
                     Thread clientThread = new Thread(() => this.HandleClient(clientSocket));
                     clientThread.Start();
                 }
                 catch (SocketException e)
                 {
-                    // 10004 is fine - server socket was closed by Stop() method
+                    // 10004 is fine - server socket was closed by Server.Stop() method
                     if (e.ErrorCode != 10004)
                     {
                         Console.WriteLine(e.Message);
@@ -89,17 +102,10 @@ namespace tcp_chat_server
             }
         }
 
-
-        public static void sendMessage(TcpClient target, String message)
-        {
-            NetworkStream stream = target.GetStream();
-            StreamWriter writer = new StreamWriter(stream);
-
-            writer.WriteLine(message);
-            writer.Flush();
-        }
-
-
+        
+        /**
+         * Handles connected client
+         */ 
         public void HandleClient(TcpClient clientSocket)
         {
             String chatroomName;
@@ -108,12 +114,14 @@ namespace tcp_chat_server
             Client client = new Client(clientSocket);
             Console.WriteLine("[" + DateTime.Now + "][" + client.GetSocket().GetHashCode() + "] New client has connected.");
 
-            // Send list of available chatrooms
+            // Send list of available chatrooms to client
             client.SendMessage(Server.GenerateSystemMessage(this.chatRooms.Select(r => r.GetName()).ToList<String>()));
 
             try
             {
+                // Get client's selected chatroom
                 chatroomName = client.ReceiveMessage().Content.ToString();
+                // Get client's username
                 username = client.ReceiveMessage().Content.ToString();
             }
             catch (IOException)
@@ -122,12 +130,13 @@ namespace tcp_chat_server
                 return;
             }
 
-
+            // Check if room with selected name exists
             Room selectedRoom = this.chatRooms.Find(delegate(Room room)
             {
                 return room.GetName() == chatroomName;
             });
 
+            // Create new room if does not exists
             if (selectedRoom == null)
             {
                 selectedRoom = new Room(chatroomName);
@@ -137,7 +146,7 @@ namespace tcp_chat_server
             client.SetRoom(selectedRoom);
             selectedRoom.AddClient(client);
 
-            // Check if user with same username is already connected
+            // Check if user with same username is already connected to selected chatroom
             var existingUsername = selectedRoom.GetClients().OfType<Client>().Where(c => c.GetName() == username);
             if (existingUsername.Count() > 0)
             {
@@ -155,6 +164,7 @@ namespace tcp_chat_server
             client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage("Connected Users"));
             client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage(client.GetRoom().GetClients().Select(c => c.GetName()).ToList<String>()));
 
+            // Send last ten messages from history
             List<Message> lastTenMessages = DAOs.MessagesDAO.GetLastTenMessagesInRoom(client.GetRoom());
 
             foreach(Message m in lastTenMessages)
@@ -164,11 +174,15 @@ namespace tcp_chat_server
 
             try
             {
+                // Handles clients chating
                 client.Chat();
             }
             catch (IOException)
             {
+                // Client was disconnected, remove him from room
                 client.GetRoom().RemoveClient(client);
+                // Remove client from list of connected users
+                this.connectedClients.Remove(client.GetHashCode());
                 Console.WriteLine("[" + DateTime.Now + "][" + client.GetSocket().GetHashCode() + "] " + client.GetName() + " left room " + client.GetRoom().GetName());
                 Console.WriteLine("[" + DateTime.Now + "][" + client.GetSocket().GetHashCode() + "] Client has disconnected.");
             }
@@ -198,6 +212,20 @@ namespace tcp_chat_server
             BinaryFormatter formatter = new BinaryFormatter();
             formatter.Binder = new DeserializationBinder();
             formatter.Serialize(client.GetStream(), message);
+        }
+
+
+        /**
+         * Shows list of available rooms
+         */ 
+        public void ListRooms()
+        {
+            Console.WriteLine("total " + this.chatRooms.Count());
+
+            foreach(Room room in this.chatRooms)
+            {
+                Console.WriteLine(room.GetName() + "\t\t" + room.GetClients().Count() + " clients");
+            }
         }
     }
 }

@@ -2,18 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using tcp_chat_server.DatabaseModels;
 
 namespace tcp_chat_server.DAOs
 {
     class MessagesDAO
     {
+        /**
+         * Returns list of last 10 (max) messages in chatroom room
+         */ 
         public static List<Message> GetLastTenMessagesInRoom(Room room)
         {
-            String roomName = room.GetName();
             using (HistoryDb context = new HistoryDb())
             {
+                String roomName = room.GetName();
                 return context.Messages.Where(x => x.Room == roomName)
                     .OrderByDescending(x => x.Timestamp)
                     .Take(10)
@@ -28,6 +30,10 @@ namespace tcp_chat_server.DAOs
             }
         }
 
+
+        /**
+         * Save message to history in database
+         */ 
         public static void Add(Message message, Room room)
         {
             DatabaseModels.Message databaseMessage = new DatabaseModels.Message();

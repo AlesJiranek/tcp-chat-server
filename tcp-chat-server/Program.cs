@@ -12,11 +12,14 @@ namespace tcp_chat_server
     {
         private static Dictionary<String, String> commands = new Dictionary<String, String>();
 
+        /**
+         * Main program function
+         */ 
         static void Main(string[] args)
         {
 
-            String ip   = "127.0.0.1";
-            int port    = 7777;
+            String ip = "127.0.0.1";
+            int port = 7777;
 
             initCommands();
             //print info in console
@@ -25,30 +28,34 @@ namespace tcp_chat_server
             IPAddress ipAddress = IPAddress.Parse(ip);
             Server server = new Server(ipAddress, port);
 
-            if (!server.Start()) {
+            if (!server.Start())
+            {
                 Console.WriteLine("Server cannot be started.");
-                return; 
+                return;
             }
 
-            Console.WriteLine("Server is listening on port " + port);           
-           
+            Console.WriteLine("Server is listening on port " + port);
+
+            Console.Write("Server:$ ");
             String command;
-            while( (command = Console.ReadLine()) != "exit")
+            while ((command = Console.ReadLine()) != "exit")
             {
                 switch (command)
                 {
                     case "help": listCommands(); break;
+                    case "rooms": server.ListRooms(); break;
                     default: Console.WriteLine("Invalid command. Type \"help\" to list all available commands."); break;
                 }
+                Console.Write("Server:$ ");
             }
 
             server.Stop();
-            Console.ReadKey();
         }
+        
 
         /**
          * Prints informational text to console
-         */ 
+         */
         static void printHeader()
         {
             Console.WriteLine("=================================================");
@@ -61,12 +68,12 @@ namespace tcp_chat_server
 
         /**
          * Prints all available commands
-         */ 
+         */
         static void listCommands()
         {
-            foreach(var command in commands)
+            foreach (var command in commands)
             {
-                Console.WriteLine(command.Key + " - " + command.Value);
+                Console.WriteLine(command.Key + "\t" + command.Value);
             }
         }
 
@@ -76,8 +83,9 @@ namespace tcp_chat_server
          */
         static void initCommands()
         {
-            commands.Add("help","Shows list of all available commands.");
-            commands.Add("exit","Exits chat server.");
+            commands.Add("help", "Shows list of all available commands.");
+            commands.Add("exit", "Exits chat server.");
+            commands.Add("rooms", "Shows list of all created chat rooms.");
         }
     }
 }
