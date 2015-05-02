@@ -34,9 +34,6 @@ namespace tcp_chat_server
             this.port = port;
             this.connectedClients = new Hashtable();
             this.chatRooms = new List<Room>();
-            this.chatRooms.Add(new Room("První místnost"));
-            this.chatRooms.Add(new Room("Druhá místnost"));
-            this.chatRooms.Add(new Room("Třetí místnost"));
         }
 
         public bool Start()
@@ -134,6 +131,7 @@ namespace tcp_chat_server
             if (selectedRoom == null)
             {
                 selectedRoom = new Room(chatroomName);
+                this.chatRooms.Add(selectedRoom);
             }
 
             client.SetRoom(selectedRoom);
@@ -156,6 +154,13 @@ namespace tcp_chat_server
             // Send list of names of connected clients
             client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage("Connected Users"));
             client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage(client.GetRoom().GetClients().Select(c => c.GetName()).ToList<String>()));
+
+            List<Message> lastTenMessages = DAOs.MessagesDAO.GetLastTenMessagesInRoom(client.GetRoom());
+
+            foreach(Message m in lastTenMessages)
+            {
+                client.SendMessage(m);
+            }
 
             try
             {

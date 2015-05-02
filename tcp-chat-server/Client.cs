@@ -8,6 +8,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using tcp_chat_server.DAOs;
 
 namespace tcp_chat_server
 {
@@ -121,7 +122,14 @@ namespace tcp_chat_server
         {
             while (true)
             {
+                // Wait for incoming message from client
                 Message message = ReceiveMessage();
+                
+                // Save message to history
+                Task saveHistory = new Task(() => DAOs.MessagesDAO.Add(message, this.GetRoom()));
+                saveHistory.Start();
+
+                // Brodcast message to other clients in same room
                 this.GetRoom().BroadcastMessage(message);
             }
         }
