@@ -183,6 +183,10 @@ namespace tcp_chat_server
                 client.GetRoom().RemoveClient(client);
                 // Remove client from list of connected users
                 this.connectedClients.Remove(client.GetHashCode());
+                // Send updated list of names of connected clients
+                client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage("Connected Users"));
+                client.GetRoom().BroadcastMessage(Server.GenerateSystemMessage(client.GetRoom().GetClients().Select(c => c.GetName()).ToList<String>()));
+
                 Console.WriteLine("[" + DateTime.Now + "][" + client.GetSocket().GetHashCode() + "] " + client.GetName() + " left room " + client.GetRoom().GetName());
                 Console.WriteLine("[" + DateTime.Now + "][" + client.GetSocket().GetHashCode() + "] Client has disconnected.");
             }
