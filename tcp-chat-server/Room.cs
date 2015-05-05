@@ -10,10 +10,10 @@ namespace tcp_chat_server
     class Room
     {
         /** Room name */
-        String name;
+        private String name;
 
         /** Clients connected to chat room*/
-        List<Client> clients;
+        private List<Client> clients;
 
 
         /**

@@ -34,9 +34,9 @@ namespace tcp_chat_server
                 return;
             }
 
-            initCommands();
+            InitCommands();
             //print info in console
-            printHeader();
+            PrintHeader();
 
             Server server = new Server(ipAddress, port);
 
@@ -54,7 +54,7 @@ namespace tcp_chat_server
             {
                 switch (command)
                 {
-                    case "help": listCommands(); break;
+                    case "help": ListCommands(); break;
                     case "rooms": server.ListRooms(); break;
                     default: Console.WriteLine("Invalid command. Type \"help\" to list all available commands."); break;
                 }
@@ -68,7 +68,7 @@ namespace tcp_chat_server
         /**
          * Prints informational text to console
          */
-        static void printHeader()
+        static void PrintHeader()
         {
             Console.WriteLine("=================================================");
             Console.WriteLine("ChatServer :: Ales Jiranek :: (c) 2015");
@@ -81,7 +81,7 @@ namespace tcp_chat_server
         /**
          * Prints all available commands
          */
-        static void listCommands()
+        static void ListCommands()
         {
             foreach (var command in commands)
             {
@@ -93,7 +93,7 @@ namespace tcp_chat_server
         /**
          * Initialises dictionary of available commands 
          */
-        static void initCommands()
+        static void InitCommands()
         {
             commands.Add("help", "Shows list of all available commands.");
             commands.Add("exit", "Exits chat server.");
