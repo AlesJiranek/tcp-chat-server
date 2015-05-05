@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,18 +15,29 @@ namespace tcp_chat_server
 
         /**
          * Main program function
-         */ 
+         */
         static void Main(string[] args)
         {
+            IPAddress ipAddress;
+            int port;
 
-            String ip = "127.0.0.1";
-            int port = 7777;
+            if (!IPAddress.TryParse(ConfigurationManager.AppSettings["ip"], out ipAddress))
+            {
+                Console.WriteLine("Invalid ip address in config file.");
+                Console.ReadKey();
+                return;
+            }
+
+            if(!int.TryParse(ConfigurationManager.AppSettings["port"], out port))
+            {
+                Console.WriteLine("Invalid port in config file.");
+                return;
+            }
 
             initCommands();
             //print info in console
             printHeader();
 
-            IPAddress ipAddress = IPAddress.Parse(ip);
             Server server = new Server(ipAddress, port);
 
             if (!server.Start())
@@ -51,7 +63,7 @@ namespace tcp_chat_server
 
             server.Stop();
         }
-        
+
 
         /**
          * Prints informational text to console
